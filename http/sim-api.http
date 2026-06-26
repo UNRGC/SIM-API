@@ -1,0 +1,100 @@
+@baseUrl = http://localhost:3000
+@adminApiKey = REEMPLAZA_CON_TU_ADMIN_API_KEY
+@appApiKey = REEMPLAZA_CON_TU_APP_API_KEY
+@applicationId = 11111111-1111-4111-8111-111111111111
+@customerId = PEGA_AQUI_EL_CUSTOMER_ID_CREADO
+@licenseId = 33333333-3333-4333-8333-333333333333
+@serialNumber = ABCDE-23456-FGHJK-789KL-MNPQR
+
+# Antes de crear licencias, ejecuta docs/database-schema.sql y docs/demo-seed.sql.
+# Despues de "Create license with customer", copia data.customerId, data.id y data.serialNumber.
+
+### Health
+GET {{baseUrl}}/health
+
+### Create license with customer
+POST {{baseUrl}}/api/v1/licenses
+Content-Type: application/json
+x-api-key: {{adminApiKey}}
+
+{
+  "applicationId": "{{applicationId}}",
+  "customer": {
+    "externalRef": "demo-customer",
+    "name": "Cliente Demo",
+    "email": "cliente@example.com",
+    "rfc": "XAXX010101000",
+    "fiscalRegime": "General de Ley Personas Morales",
+    "postalCode": "64000"
+  },
+  "validFrom": "2026-06-26T00:00:00.000Z",
+  "validUntil": "2027-06-26T00:00:00.000Z",
+  "maxActivations": 1,
+  "metadata": {
+    "plan": "pro",
+    "ownerName": "Cliente Demo"
+  }
+}
+
+### Create license with existing customer
+POST {{baseUrl}}/api/v1/licenses
+Content-Type: application/json
+x-api-key: {{adminApiKey}}
+
+{
+  "applicationId": "{{applicationId}}",
+  "customerId": "{{customerId}}",
+  "validFrom": "2026-06-26T00:00:00.000Z",
+  "validUntil": "2027-06-26T00:00:00.000Z",
+  "maxActivations": 1,
+  "metadata": {
+    "plan": "pro"
+  }
+}
+
+### List licenses
+GET {{baseUrl}}/api/v1/licenses?applicationId={{applicationId}}&customerId={{customerId}}&status=active&limit=25&offset=0
+x-api-key: {{adminApiKey}}
+
+### Get license by id
+GET {{baseUrl}}/api/v1/licenses/{{licenseId}}
+x-api-key: {{adminApiKey}}
+
+### Validate license with app key
+POST {{baseUrl}}/api/v1/licenses/validate
+Content-Type: application/json
+x-api-key: {{appApiKey}}
+
+{
+  "serialNumber": "{{serialNumber}}",
+  "applicationId": "{{applicationId}}"
+}
+
+### Validate license with admin key
+POST {{baseUrl}}/api/v1/licenses/validate
+Content-Type: application/json
+x-api-key: {{adminApiKey}}
+
+{
+  "serialNumber": "{{serialNumber}}",
+  "applicationId": "{{applicationId}}",
+  "customerId": "{{customerId}}"
+}
+
+### Revoke license
+POST {{baseUrl}}/api/v1/licenses/{{licenseId}}/revoke
+Content-Type: application/json
+x-api-key: {{adminApiKey}}
+
+{
+  "reason": "Prueba manual desde IDE"
+}
+
+### Renew license
+POST {{baseUrl}}/api/v1/licenses/{{licenseId}}/renew
+Content-Type: application/json
+x-api-key: {{adminApiKey}}
+
+{
+  "validUntil": "2028-06-26T00:00:00.000Z"
+}
