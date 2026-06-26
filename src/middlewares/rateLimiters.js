@@ -1,5 +1,7 @@
 const { ipKeyGenerator, rateLimit } = require('express-rate-limit');
 
+const validationKeyGenerator = (req) => ipKeyGenerator(req.ip);
+
 const adminLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   limit: 120,
@@ -18,7 +20,7 @@ const validationLimiter = rateLimit({
   limit: 30,
   standardHeaders: true,
   legacyHeaders: false,
-  keyGenerator: (req) => `${ipKeyGenerator(req.ip)}:${req.get('x-api-key') || 'anonymous'}`,
+  keyGenerator: validationKeyGenerator,
   message: {
     error: {
       code: 'RATE_LIMITED',
@@ -30,4 +32,5 @@ const validationLimiter = rateLimit({
 module.exports = {
   adminLimiter,
   validationLimiter,
+  validationKeyGenerator,
 };
