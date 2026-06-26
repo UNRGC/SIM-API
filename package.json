@@ -1,0 +1,38 @@
+{
+  "name": "sim-api",
+  "version": "1.0.0",
+  "description": "API REST para gestionar licenciamiento de aplicaciones.",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js",
+    "test": "node --test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/UNRGC/SIM-API.git"
+  },
+  "keywords": [
+    "licensing",
+    "api",
+    "postgresql"
+  ],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/UNRGC/SIM-API/issues"
+  },
+  "homepage": "https://github.com/UNRGC/SIM-API#readme",
+  "dependencies": {
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "express-rate-limit": "^8.5.2",
+    "helmet": "^8.2.0",
+    "pg": "^8.16.3",
+    "pino": "^10.3.1",
+    "pino-http": "^11.0.0",
+    "zod": "^4.4.3"
+  }
+}
