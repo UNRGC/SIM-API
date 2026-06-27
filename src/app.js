@@ -5,6 +5,8 @@ const pinoHttp = require('pino-http');
 const { app: appConfig } = require('./config/env');
 const logger = require('./utils/logger');
 const licenseRoutes = require('./routes/licenseRoutes');
+const applicationRoutes = require('./routes/applicationRoutes');
+const customerRoutes = require('./routes/customerRoutes');
 const notFound = require('./middlewares/notFound');
 const errorHandler = require('./middlewares/errorHandler');
 
@@ -34,6 +36,8 @@ app.get('/health', (_req, res) => {
   res.status(200).json({ status: 'ok' });
 });
 
+app.use('/api/v1/applications', applicationRoutes);
+app.use('/api/v1/customers', customerRoutes);
 app.use('/api/v1/licenses', licenseRoutes);
 app.use(notFound);
 app.use(errorHandler);

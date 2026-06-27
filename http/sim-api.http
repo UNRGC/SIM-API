@@ -6,11 +6,73 @@
 @licenseId = 33333333-3333-4333-8333-333333333333
 @serialNumber = ABCDE-23456-FGHJK-789KL-MNPQR
 
-# Antes de crear licencias, ejecuta docs/database-schema.sql y docs/demo-seed.sql.
-# Despues de "Create license with customer", copia data.customerId, data.id y data.serialNumber.
+# Antes de probar, ejecuta docs/database-schema.sql.
+# Copia los ids devueltos por las requests create en applicationId, customerId y licenseId.
+# Despues de crear una licencia, copia data.serialNumber en serialNumber.
 
 ### Health
 GET {{baseUrl}}/health
+
+### Create application
+POST {{baseUrl}}/api/v1/applications
+Content-Type: application/json
+x-api-key: {{adminApiKey}}
+
+{
+  "name": "SIM Desktop",
+  "code": "SIM-DESKTOP"
+}
+
+### List applications
+GET {{baseUrl}}/api/v1/applications?q=sim&isActive=true&limit=25&offset=0
+x-api-key: {{adminApiKey}}
+
+### Get application by id
+GET {{baseUrl}}/api/v1/applications/{{applicationId}}
+x-api-key: {{adminApiKey}}
+
+### Update application
+PATCH {{baseUrl}}/api/v1/applications/{{applicationId}}
+Content-Type: application/json
+x-api-key: {{adminApiKey}}
+
+{
+  "name": "SIM Desktop",
+  "isActive": true
+}
+
+### Create customer
+POST {{baseUrl}}/api/v1/customers
+Content-Type: application/json
+x-api-key: {{adminApiKey}}
+
+{
+  "externalRef": "demo-customer",
+  "name": "Cliente Demo",
+  "email": "cliente@example.com",
+  "rfc": "XAXX010101000",
+  "fiscalRegime": "General de Ley Personas Morales",
+  "postalCode": "64000"
+}
+
+### List customers
+GET {{baseUrl}}/api/v1/customers?q=cliente&isActive=true&limit=25&offset=0
+x-api-key: {{adminApiKey}}
+
+### Get customer by id
+GET {{baseUrl}}/api/v1/customers/{{customerId}}
+x-api-key: {{adminApiKey}}
+
+### Update customer
+PATCH {{baseUrl}}/api/v1/customers/{{customerId}}
+Content-Type: application/json
+x-api-key: {{adminApiKey}}
+
+{
+  "email": "cliente.admin@example.com",
+  "postalCode": "64000",
+  "isActive": true
+}
 
 ### Create license with customer
 POST {{baseUrl}}/api/v1/licenses

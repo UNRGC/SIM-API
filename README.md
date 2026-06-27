@@ -1,6 +1,6 @@
 # SIM API
 
-API REST en Node.js para administrar licencias de aplicaciones con PostgreSQL.
+API REST en Node.js para administrar clientes, aplicaciones y licencias con PostgreSQL.
 
 ## Configuracion
 
@@ -40,7 +40,27 @@ npm test
 
 ## Endpoints
 
-Base path: `/api/v1/licenses`
+Todas las rutas administrativas requieren una key de `ADMIN_API_KEYS` en el header `x-api-key`. La validacion de licencias desde apps puede usar una key de `APP_API_KEYS`.
+
+Aplicaciones: `/api/v1/applications`
+
+| Metodo | Ruta | Descripcion |
+| --- | --- | --- |
+| `POST` | `/` | Registra una aplicacion. |
+| `GET` | `/` | Lista aplicaciones con filtros opcionales. |
+| `GET` | `/:applicationId` | Consulta una aplicacion por id. |
+| `PATCH` | `/:applicationId` | Actualiza nombre, codigo o estado. |
+
+Clientes: `/api/v1/customers`
+
+| Metodo | Ruta | Descripcion |
+| --- | --- | --- |
+| `POST` | `/` | Registra un cliente con datos fiscales opcionales. |
+| `GET` | `/` | Lista clientes con filtros opcionales. |
+| `GET` | `/:customerId` | Consulta un cliente por id. |
+| `PATCH` | `/:customerId` | Actualiza datos administrativos o fiscales. |
+
+Licencias: `/api/v1/licenses`
 
 | Metodo | Ruta | Descripcion |
 | --- | --- | --- |
@@ -51,12 +71,32 @@ Base path: `/api/v1/licenses`
 | `POST` | `/:licenseId/revoke` | Revoca una licencia. |
 | `POST` | `/:licenseId/renew` | Renueva o extiende vigencia. |
 
-Todas las rutas requieren `x-api-key`:
-
-- `ADMIN_API_KEYS`: permite crear, consultar, listar, revocar, renovar y validar.
+- `ADMIN_API_KEYS`: permite administrar aplicaciones, clientes y licencias; tambien puede validar.
 - `APP_API_KEYS`: permite solo validar licencias.
 
 ## Ejemplos
+
+Crear aplicacion:
+
+```json
+{
+  "name": "SIM Desktop",
+  "code": "SIM-DESKTOP"
+}
+```
+
+Crear cliente:
+
+```json
+{
+  "externalRef": "demo-customer",
+  "name": "Cliente Demo",
+  "email": "cliente@example.com",
+  "rfc": "XAXX010101000",
+  "fiscalRegime": "General de Ley Personas Morales",
+  "postalCode": "64000"
+}
+```
 
 Crear licencia:
 
@@ -178,7 +218,7 @@ Renovar licencia:
 
 Si usas un IDE con cliente HTTP, abre [`http/sim-api.http`](http/sim-api.http) y edita las variables del encabezado antes de ejecutar las requests.
 
-Antes de crear licencias con esos ejemplos, ejecuta [`docs/database-schema.sql`](docs/database-schema.sql) y luego [`docs/demo-seed.sql`](docs/demo-seed.sql) en tu base PostgreSQL. El seed crea la aplicacion usada por la variable `applicationId`; el cliente puede crearse junto con la licencia.
+Antes de probar con esos ejemplos, ejecuta [`docs/database-schema.sql`](docs/database-schema.sql) en tu base PostgreSQL. [`docs/demo-seed.sql`](docs/demo-seed.sql) sigue disponible si quieres crear la aplicacion demo directamente por SQL, pero el flujo recomendado es usar `POST /api/v1/applications`.
 
 ## Seguridad aplicada
 

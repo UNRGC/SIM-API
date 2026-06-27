@@ -1,4 +1,5 @@
 const { z } = require('zod');
+const { fiscalCustomerFields } = require('./customerSchemas');
 
 const isoDate = z
   .string()
@@ -9,19 +10,7 @@ const uuid = z.string().uuid();
 
 const licenseStatus = z.enum(['active', 'suspended', 'revoked', 'expired']);
 
-const createCustomerSchema = z.object({
-  externalRef: z.string().trim().min(1).max(120).optional(),
-  name: z.string().trim().min(1).max(200),
-  email: z.string().trim().email().max(320).optional(),
-  rfc: z
-    .string()
-    .trim()
-    .toUpperCase()
-    .regex(/^[A-Z&Ñ]{3,4}\d{6}[A-Z0-9]{3}$/, 'Formato de RFC invalido.')
-    .optional(),
-  fiscalRegime: z.string().trim().min(1).max(120).optional(),
-  postalCode: z.string().trim().regex(/^\d{5}$/, 'El CP debe tener 5 digitos.').optional(),
-});
+const createCustomerSchema = z.object(fiscalCustomerFields);
 
 const serialNumber = z
   .string()
