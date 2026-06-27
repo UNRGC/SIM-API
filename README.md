@@ -24,9 +24,13 @@ LICENSE_HASH_SECRET=
 ADMIN_API_KEYS=
 APP_API_KEYS=
 CORS_ORIGINS=
+TRUST_PROXY=false
+ADMIN_ALLOWED_IPS=loopback
 ```
 
 `LICENSE_HASH_SECRET` debe ser un valor aleatorio largo y privado. `ADMIN_API_KEYS` y `APP_API_KEYS` aceptan una o varias keys separadas por coma. `CORS_ORIGINS` acepta origenes permitidos separados por coma, por ejemplo `https://admin.tudominio.com,https://app.tudominio.com`.
+
+`ADMIN_ALLOWED_IPS` restringe rutas administrativas por IP o CIDR antes de validar la API key. Por defecto permite solo loopback en desarrollo; en `NODE_ENV=production` es obligatorio configurarlo explicitamente. Ejemplos: `10.0.0.0/24`, `203.0.113.10`, `loopback`. Si estas detras de Nginx, Cloudflare o un balanceador, activa `TRUST_PROXY=true` solo si ese proxy es confiable y configura la allowlist pensando en la IP real que vera Express.
 
 3. Revisa `docs/database-schema.sql`. Es una propuesta de tablas, llaves e indices; la API no ejecuta ese script automaticamente.
 
@@ -58,6 +62,8 @@ Flujo recomendado:
 4. Panel: npm run admin:dev
 5. Abrir http://localhost:3100
 ```
+
+Para exponer validacion de licencias en internet, publica solo `POST /api/v1/licenses/validate`. Las rutas administrativas de aplicaciones, clientes y licencias requieren `ADMIN_API_KEYS` y tambien deben pasar `ADMIN_ALLOWED_IPS`; idealmente solo el panel o la red privada deberian alcanzarlas.
 
 ## Endpoints
 

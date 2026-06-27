@@ -1,6 +1,7 @@
 const express = require('express');
 const licenseController = require('../controllers/licenseController');
 const authenticateApiKey = require('../middlewares/authenticateApiKey');
+const { restrictAdminNetwork } = require('../middlewares/restrictAdminNetwork');
 const { adminLimiter, validationLimiter } = require('../middlewares/rateLimiters');
 const validate = require('../middlewares/validate');
 const {
@@ -16,6 +17,7 @@ const router = express.Router();
 
 router.post(
   '/',
+  restrictAdminNetwork,
   adminLimiter,
   authenticateApiKey(['admin']),
   validate(createLicenseSchema),
@@ -23,6 +25,7 @@ router.post(
 );
 router.get(
   '/',
+  restrictAdminNetwork,
   adminLimiter,
   authenticateApiKey(['admin']),
   validate(listLicensesSchema, 'query'),
@@ -37,6 +40,7 @@ router.post(
 );
 router.get(
   '/:licenseId',
+  restrictAdminNetwork,
   adminLimiter,
   authenticateApiKey(['admin']),
   validate(licenseIdParamsSchema, 'params'),
@@ -44,6 +48,7 @@ router.get(
 );
 router.post(
   '/:licenseId/revoke',
+  restrictAdminNetwork,
   adminLimiter,
   authenticateApiKey(['admin']),
   validate(licenseIdParamsSchema, 'params'),
@@ -52,6 +57,7 @@ router.post(
 );
 router.post(
   '/:licenseId/renew',
+  restrictAdminNetwork,
   adminLimiter,
   authenticateApiKey(['admin']),
   validate(licenseIdParamsSchema, 'params'),

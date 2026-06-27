@@ -1,6 +1,7 @@
 const express = require('express');
 const customerController = require('../controllers/customerController');
 const authenticateApiKey = require('../middlewares/authenticateApiKey');
+const { restrictAdminNetwork } = require('../middlewares/restrictAdminNetwork');
 const { adminLimiter } = require('../middlewares/rateLimiters');
 const validate = require('../middlewares/validate');
 const {
@@ -11,6 +12,8 @@ const {
 } = require('../schemas/customerSchemas');
 
 const router = express.Router();
+
+router.use(restrictAdminNetwork);
 
 router.post(
   '/',

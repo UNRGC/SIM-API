@@ -35,6 +35,7 @@ ADMIN_USERS_FILE=./config/admin-users.json
 ```
 
 En produccion usa `PANEL_COOKIE_SECURE=true` y HTTPS.
+En la API principal configura `ADMIN_ALLOWED_IPS` con la IP del panel, del reverse proxy o de la red privada desde donde el panel llamara a la API. En produccion la API exige esta variable explicitamente.
 
 3. Genera un hash Argon2id:
 

@@ -63,3 +63,28 @@ Admin Panel BFF  --->  SIM API privada  ---> PostgreSQL
 El panel puede vivir en otro host o contenedor. La API administrativa debe quedar accesible solo desde el panel o red interna cuando sea posible.
 
 Para despliegues con mas de una instancia del panel, sustituye el almacenamiento de sesiones en memoria por un store compartido como Redis.
+
+## API Publica vs Administrativa
+
+La API puede exponerse a internet para validacion de licencias, pero no es recomendable exponer libremente toda la superficie administrativa.
+
+Publico:
+
+```text
+POST /api/v1/licenses/validate
+```
+
+Administrativo:
+
+```text
+/api/v1/applications
+/api/v1/customers
+/api/v1/licenses excepto /validate
+```
+
+Las rutas administrativas tienen dos barreras:
+
+- `ADMIN_ALLOWED_IPS`: allowlist de IP/CIDR del panel, reverse proxy o red interna. En produccion debe configurarse explicitamente.
+- `ADMIN_API_KEYS`: credencial administrativa enviada solo por el BFF/panel.
+
+Si la API esta detras de un proxy confiable, configura `TRUST_PROXY=true` para que Express use la IP real del cliente/proxy autorizado. Si dejas `TRUST_PROXY=false` detras de un proxy local, Express puede ver solo `127.0.0.1`; por eso el reverse proxy tambien debe bloquear rutas administrativas publicas o pasar la IP real de forma confiable.

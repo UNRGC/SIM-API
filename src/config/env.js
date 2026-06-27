@@ -23,16 +23,31 @@ const toList = (value) =>
     .map((item) => item.trim())
     .filter(Boolean);
 
+const nodeEnv = process.env.NODE_ENV || 'development';
+const adminAllowedIps = toList(
+  process.env.ADMIN_ALLOWED_IPS === undefined
+    ? nodeEnv === 'production'
+      ? ''
+      : 'loopback'
+    : process.env.ADMIN_ALLOWED_IPS
+);
+
+if (nodeEnv === 'production' && adminAllowedIps.length === 0) {
+  throw new Error('ADMIN_ALLOWED_IPS es requerido en produccion.');
+}
+
 module.exports = {
   app: {
     port: toNumber(process.env.PORT, 3000),
-    nodeEnv: process.env.NODE_ENV || 'development',
+    nodeEnv,
     corsOrigins: toList(process.env.CORS_ORIGINS),
+    trustProxy: toBoolean(process.env.TRUST_PROXY, false),
   },
   security: {
     adminApiKeys: toList(process.env.ADMIN_API_KEYS),
     appApiKeys: toList(process.env.APP_API_KEYS),
     licenseHashSecret: process.env.LICENSE_HASH_SECRET,
+    adminAllowedIps,
   },
   database: {
     host: process.env.DB_HOST,

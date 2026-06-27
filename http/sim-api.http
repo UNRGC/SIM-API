@@ -9,6 +9,8 @@
 # Antes de probar, ejecuta docs/database-schema.sql.
 # Copia los ids devueltos por las requests create en applicationId, customerId y licenseId.
 # Despues de crear una licencia, copia data.serialNumber en serialNumber.
+# Las requests administrativas requieren ADMIN_API_KEY y una IP permitida en ADMIN_ALLOWED_IPS.
+# La validacion con APP_API_KEY esta pensada para exponerse a internet.
 
 ### Health
 GET {{baseUrl}}/health
