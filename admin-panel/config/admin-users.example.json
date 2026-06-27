@@ -1,0 +1,10 @@
+[
+  {
+    "username": "admin",
+    "displayName": "Administrador",
+    "passwordHash": "$argon2id$v=19$m=65536,t=3,p=4$REEMPLAZA_CON_HASH$REEMPLAZA_CON_HASH",
+    "roles": ["admin"],
+    "permissions": ["*"],
+    "disabled": false
+  }
+]

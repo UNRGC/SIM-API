@@ -128,6 +128,10 @@ dist
 # JetBrains IDE project files
 .idea/
 
+# Local admin panel users
+admin-panel/config/admin-users.json
+admin-panel/.env
+
 # pnpm
 .pnpm-store
 

@@ -1,0 +1,30 @@
+{
+  "name": "sim-admin-panel",
+  "version": "1.0.0",
+  "description": "Panel web administrativo para SIM API.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js",
+    "hash-password": "node scripts/hash-password.js",
+    "test": "node --test"
+  },
+  "keywords": [
+    "admin",
+    "licensing",
+    "bff"
+  ],
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "argon2": "^0.44.0",
+    "cookie-parser": "^1.4.7",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "express-rate-limit": "^8.5.2",
+    "helmet": "^8.2.0",
+    "pino": "^10.3.1",
+    "pino-http": "^11.0.0",
+    "zod": "^4.4.3"
+  }
+}

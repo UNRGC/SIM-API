@@ -36,6 +36,27 @@ CORS_ORIGINS=
 npm run dev
 npm start
 npm test
+npm run admin:install
+npm run admin:dev
+```
+
+## Panel Administrativo
+
+El repo incluye un panel web independiente en [`admin-panel`](admin-panel). El panel funciona como BFF: autentica usuarios administrativos con login propio, mantiene sesiones seguras y llama a esta API usando `SIM_API_ADMIN_KEY` solo desde el servidor del panel. El navegador nunca recibe `ADMIN_API_KEY`.
+
+Documentacion:
+
+- [Guia del panel](admin-panel/README.md)
+- [Arquitectura del panel](docs/admin-panel-architecture.md)
+
+Flujo recomendado:
+
+```text
+1. API: npm run dev
+2. Panel: npm run admin:install
+3. Panel: configurar admin-panel/.env y admin-panel/config/admin-users.json
+4. Panel: npm run admin:dev
+5. Abrir http://localhost:3100
 ```
 
 ## Endpoints
@@ -218,7 +239,7 @@ Renovar licencia:
 
 Si usas un IDE con cliente HTTP, abre [`http/sim-api.http`](http/sim-api.http) y edita las variables del encabezado antes de ejecutar las requests.
 
-Antes de probar con esos ejemplos, ejecuta [`docs/database-schema.sql`](docs/database-schema.sql) en tu base PostgreSQL. [`docs/demo-seed.sql`](docs/demo-seed.sql) sigue disponible si quieres crear la aplicacion demo directamente por SQL, pero el flujo recomendado es usar `POST /api/v1/applications`.
+Antes de probar con esos ejemplos, ejecuta [`docs/database-schema.sql`](docs/database-schema.sql) en tu base PostgreSQL. El flujo recomendado es crear la aplicacion con `POST /api/v1/applications` o desde el panel administrativo.
 
 ## Seguridad aplicada
 

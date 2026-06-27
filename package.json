@@ -6,7 +6,10 @@
   "scripts": {
     "start": "node src/server.js",
     "dev": "node --watch src/server.js",
-    "test": "node --test"
+    "test": "node --test \"test/**/*.test.js\"",
+    "admin:install": "npm install --prefix admin-panel",
+    "admin:dev": "npm run dev --prefix admin-panel",
+    "admin:start": "npm start --prefix admin-panel"
   },
   "repository": {
     "type": "git",
