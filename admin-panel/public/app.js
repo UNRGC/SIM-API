@@ -123,12 +123,13 @@ const switchView = async (view) => {
 
 const createApplication = async (event) => {
   event.preventDefault();
-  const data = cleanObject(readForm(event.currentTarget));
+  const form = event.currentTarget;
+  const data = cleanObject(readForm(form));
   data.isActive = data.isActive === 'true';
 
   try {
     await api('/admin/api/applications', { method: 'POST', body: JSON.stringify(data) });
-    event.currentTarget.reset();
+    form.reset();
     await loadApplications();
     setMessage('Aplicacion registrada.');
   } catch (error) {
@@ -151,12 +152,13 @@ const updateApplication = async (id, payload) => {
 
 const createCustomer = async (event) => {
   event.preventDefault();
-  const data = cleanObject(readForm(event.currentTarget));
+  const form = event.currentTarget;
+  const data = cleanObject(readForm(form));
   data.isActive = data.isActive === 'true';
 
   try {
     await api('/admin/api/customers', { method: 'POST', body: JSON.stringify(data) });
-    event.currentTarget.reset();
+    form.reset();
     await loadCustomers();
     setMessage('Cliente registrado.');
   } catch (error) {
@@ -179,7 +181,8 @@ const updateCustomer = async (id, payload) => {
 
 const createLicense = async (event) => {
   event.preventDefault();
-  const data = cleanObject(readForm(event.currentTarget));
+  const form = event.currentTarget;
+  const data = cleanObject(readForm(form));
   const payload = {
     applicationId: data.applicationId,
     customerId: data.customerId,
@@ -194,7 +197,7 @@ const createLicense = async (event) => {
       method: 'POST',
       body: JSON.stringify(cleanObject(payload)),
     });
-    event.currentTarget.reset();
+    form.reset();
     await loadLicenses();
     setMessage(`Licencia creada. Numero de serie: ${result.serialNumber}`);
   } catch (error) {
@@ -233,6 +236,35 @@ const renewLicense = async (id) => {
     });
     await loadLicenses();
     setMessage('Licencia renovada.');
+  } catch (error) {
+    setMessage(error.message, 'error');
+  }
+};
+
+const downloadLicenseCertificate = async (id) => {
+  try {
+    const response = await fetch(`/admin/api/licenses/${id}/certificate`, {
+      headers: state.csrfToken ? { 'x-csrf-token': state.csrfToken } : {},
+    });
+
+    if (!response.ok) {
+      const payload = await response.json().catch(() => ({}));
+      throw new Error(payload.error?.message || 'No fue posible generar el certificado.');
+    }
+
+    const blob = await response.blob();
+    const disposition = response.headers.get('content-disposition') || '';
+    const filenameMatch = disposition.match(/filename="([^"]+)"/);
+    const filename = filenameMatch?.[1] || `certificado-licencia-${id}.pdf`;
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
   } catch (error) {
     setMessage(error.message, 'error');
   }
@@ -445,6 +477,7 @@ const renderLicenseRow = (item) => `
     <td>${statusBadge(item.status)}</td>
     <td class="mono">${escapeHtml(item.id)}<br><span class="muted">...${escapeHtml(item.serialNumberSuffix || '')}</span></td>
     <td class="actions">
+      <button class="secondary" data-certificate-license="${escapeHtml(item.id)}">Certificado</button>
       <button class="secondary" data-renew-license="${escapeHtml(item.id)}">Renovar</button>
       <button class="danger" data-revoke-license="${escapeHtml(item.id)}">Revocar</button>
     </td>
@@ -489,6 +522,9 @@ const bindViewEvents = () => {
   });
   document.querySelectorAll('[data-renew-license]').forEach((button) => {
     button.addEventListener('click', () => renewLicense(button.dataset.renewLicense));
+  });
+  document.querySelectorAll('[data-certificate-license]').forEach((button) => {
+    button.addEventListener('click', () => downloadLicenseCertificate(button.dataset.certificateLicense));
   });
 };
 

@@ -1,6 +1,10 @@
 const express = require('express');
 const { callApi } = require('../apiClient');
 const {
+  buildLicenseCertificatePdf,
+  getCertificateFileName,
+} = require('../certificatePdf');
+const {
   requireAuth,
   requireCsrf,
   requirePermission,
@@ -181,6 +185,30 @@ router.get(
   async (req, res, next) => {
     try {
       res.status(200).json(await callApi({ path: `/api/v1/licenses/${req.params.licenseId}` }));
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+router.get(
+  '/licenses/:licenseId/certificate',
+  requirePermission('licenses:read'),
+  validate(licenseIdParamsSchema, 'params'),
+  async (req, res, next) => {
+    try {
+      const payload = await callApi({ path: `/api/v1/licenses/${req.params.licenseId}` });
+      const license = payload.data;
+      const pdf = await buildLicenseCertificatePdf(license);
+
+      res
+        .status(200)
+        .set({
+          'content-type': 'application/pdf',
+          'content-disposition': `attachment; filename="${getCertificateFileName(license)}"`,
+          'cache-control': 'no-store',
+        })
+        .send(pdf);
     } catch (error) {
       next(error);
     }
