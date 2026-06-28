@@ -1,34 +1,5 @@
 const PDFDocument = require('pdfkit');
 
-const formatDate = (value) => {
-  if (!value) {
-    return 'No definido';
-  }
-
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) {
-    return String(value);
-  }
-
-  return new Intl.DateTimeFormat('es-MX', {
-    dateStyle: 'medium',
-    timeZone: 'UTC',
-  }).format(date);
-};
-
-const formatDateTime = (value) => {
-  const date = value ? new Date(value) : new Date();
-  if (Number.isNaN(date.getTime())) {
-    return 'No definido';
-  }
-
-  return new Intl.DateTimeFormat('es-MX', {
-    dateStyle: 'medium',
-    timeStyle: 'short',
-    timeZone: 'UTC',
-  }).format(date);
-};
-
 const statusLabels = {
   active: 'Activa',
   suspended: 'Suspendida',
@@ -44,47 +15,67 @@ const cleanText = (value, fallback = 'No disponible') => {
   return String(value).replace(/\s+/g, ' ').trim();
 };
 
-const serialReference = (license) =>
-  license.serialNumberSuffix ? `****-${cleanText(license.serialNumberSuffix)}` : 'No disponible';
+const formatDate = (value) => {
+  if (!value) {
+    return 'No definida';
+  }
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return cleanText(value);
+  }
+
+  return new Intl.DateTimeFormat('es-MX', {
+    dateStyle: 'long',
+    timeZone: 'UTC',
+  }).format(date);
+};
+
+const getPlan = (license) => cleanText(license.metadata?.plan, 'No especificado');
 
 const getCertificateFileName = (license) => {
-  const id = cleanText(license.id, 'licencia').replace(/[^a-zA-Z0-9_-]+/g, '-');
-  return `certificado-licencia-${id}.pdf`;
+  const applicationName = cleanText(license.applicationName, 'licencia')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9_-]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+
+  return `certificado-${applicationName || 'licencia'}.pdf`;
 };
 
-const writeSectionTitle = (doc, title) => {
-  doc.moveDown(0.9);
+const writeField = (doc, label, value, options = {}) => {
+  const startY = doc.y;
+  const labelWidth = options.labelWidth || 145;
+  const valueX = 50 + labelWidth;
+
   doc
     .font('Helvetica-Bold')
-    .fontSize(11)
-    .fillColor('#0f766e')
-    .text(title.toUpperCase(), { characterSpacing: 0.2 });
-  doc.moveDown(0.25);
-  doc.strokeColor('#d7dde6').lineWidth(1).moveTo(50, doc.y).lineTo(545, doc.y).stroke();
-  doc.moveDown(0.45);
+    .fontSize(9)
+    .fillColor('#596579')
+    .text(label.toUpperCase(), 50, startY, { width: labelWidth - 12 });
+
+  doc
+    .font(options.mono ? 'Courier-Bold' : 'Helvetica')
+    .fontSize(options.large ? 14 : 11)
+    .fillColor('#1d2433')
+    .text(cleanText(value), valueX, startY - (options.large ? 2 : 0), {
+      width: 495 - labelWidth,
+    });
+
+  doc.moveDown(options.large ? 0.95 : 0.65);
 };
 
-const writeField = (doc, label, value) => {
-  const startY = doc.y;
-  doc.font('Helvetica-Bold').fontSize(9).fillColor('#627084').text(label, 50, startY, {
-    width: 160,
-  });
-  doc.font('Helvetica').fontSize(10).fillColor('#1d2433').text(cleanText(value), 210, startY, {
-    width: 335,
-  });
-  doc.moveDown(0.55);
-};
-
-const buildLicenseCertificatePdf = (license, options = {}) =>
+const buildLicenseCertificatePdf = (license) =>
   new Promise((resolve, reject) => {
     const chunks = [];
-    const issuedAt = options.issuedAt || new Date();
+    const applicationName = cleanText(license.applicationName, 'la aplicacion');
     const doc = new PDFDocument({
       size: 'A4',
       margin: 50,
+      compress: false,
       info: {
-        Title: `Certificado de adquisicion ${cleanText(license.id)}`,
-        Author: 'SIM Admin',
+        Title: `Adquisicion de licencia para ${applicationName}`,
         Subject: 'Certificado de adquisicion de licencia',
       },
     });
@@ -93,57 +84,54 @@ const buildLicenseCertificatePdf = (license, options = {}) =>
     doc.on('end', () => resolve(Buffer.concat(chunks)));
     doc.on('error', reject);
 
-    doc.rect(0, 0, 595.28, 92).fill('#111827');
+    doc.rect(0, 0, 595.28, 118).fill('#0f766e');
     doc
       .fillColor('#ffffff')
       .font('Helvetica-Bold')
-      .fontSize(20)
-      .text('Certificado de adquisicion', 50, 34);
+      .fontSize(24)
+      .text(`Adquisicion de licencia para ${applicationName}`, 50, 34, {
+        width: 495,
+        lineGap: 2,
+      });
     doc
       .font('Helvetica')
       .fontSize(10)
-      .fillColor('#cbd5e1')
-      .text('Documento administrativo de licencia emitido por SIM Admin', 50, 61);
+      .fillColor('#d9fbf5')
+      .text('Certificado de adquisicion y titularidad de uso', 50, 90);
 
-    doc.y = 122;
+    doc.y = 148;
     doc
       .font('Helvetica')
-      .fontSize(10)
+      .fontSize(11)
       .fillColor('#1d2433')
       .text(
-        'Este documento acredita la adquisicion de una licencia para la aplicacion indicada y el titular registrado. No contiene secretos operativos, API keys, hashes ni el numero de serie completo.',
-        { width: 495, align: 'left' }
+        `Se certifica que ${cleanText(license.customerName)} adquirio una licencia de uso para ${applicationName}, registrada con los datos que se muestran a continuacion.`,
+        { width: 495, lineGap: 3 }
       );
 
-    writeSectionTitle(doc, 'Licencia');
-    writeField(doc, 'ID de licencia', license.id);
-    writeField(doc, 'Referencia de serie', serialReference(license));
+    doc.moveDown(1.2);
+    doc
+      .roundedRect(50, doc.y, 495, 168, 8)
+      .fillAndStroke('#f8fafc', '#d7dde6');
+    doc.y += 18;
+    writeField(doc, 'Numero de serie', license.serialNumber, { mono: true, large: true });
     writeField(doc, 'Estado', statusLabels[license.status] || license.status);
-    writeField(doc, 'Vigencia desde', formatDate(license.validFrom));
-    writeField(doc, 'Vigencia hasta', formatDate(license.validUntil));
-    writeField(doc, 'Maximo de activaciones', license.maxActivations);
-    writeField(doc, 'Activaciones registradas', license.activationCount);
-    if (license.metadata?.plan) {
-      writeField(doc, 'Plan', license.metadata.plan);
-    }
+    writeField(doc, 'Vigencia', `${formatDate(license.validFrom)} al ${formatDate(license.validUntil)}`);
+    writeField(doc, 'Plan', getPlan(license));
     writeField(doc, 'Fecha de emision', formatDate(license.createdAt));
 
-    writeSectionTitle(doc, 'Aplicacion');
-    writeField(doc, 'Nombre', license.applicationName);
-    writeField(doc, 'Codigo', license.applicationCode);
-    writeField(doc, 'ID de aplicacion', license.applicationId);
-
-    writeSectionTitle(doc, 'Titular');
+    doc.moveDown(2.2);
+    doc
+      .font('Helvetica-Bold')
+      .fontSize(13)
+      .fillColor('#0f766e')
+      .text('Propietario de la licencia');
+    doc.moveDown(0.55);
     writeField(doc, 'Nombre / razon social', license.customerName);
-    writeField(doc, 'Email', license.customerEmail);
-    writeField(doc, 'ID de cliente', license.customerId);
+    writeField(doc, 'RFC', license.customerRfc);
+    writeField(doc, 'Correo', license.customerEmail);
 
-    writeSectionTitle(doc, 'Seguridad');
-    writeField(doc, 'Numero de serie completo', 'Oculto; solo se muestra la referencia final.');
-    writeField(doc, 'Hash de licencia', 'No incluido en este documento.');
-    writeField(doc, 'Secretos/API keys', 'No incluidos en este documento.');
-
-    const footerY = 760;
+    const footerY = 742;
     doc
       .strokeColor('#d7dde6')
       .lineWidth(1)
@@ -152,15 +140,14 @@ const buildLicenseCertificatePdf = (license, options = {}) =>
       .stroke();
     doc
       .font('Helvetica')
-      .fontSize(8)
-      .fillColor('#627084')
-      .text(`Generado el ${formatDateTime(issuedAt)} UTC`, 50, footerY + 12, {
-        width: 240,
-      })
-      .text('Para validacion operativa utiliza el servicio oficial de validacion de licencias.', 275, footerY + 12, {
-        width: 270,
-        align: 'right',
-      });
+      .fontSize(9)
+      .fillColor('#596579')
+      .text(
+        'Este certificado confirma la adquisicion de la licencia descrita y debe conservarse como comprobante del titular registrado.',
+        50,
+        footerY + 16,
+        { width: 495, align: 'center' }
+      );
 
     doc.end();
   });

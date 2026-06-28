@@ -19,6 +19,19 @@ test('createLicenseSchema accepts custom validity windows', () => {
   assert.equal(result.data.maxActivations, 3);
 });
 
+test('createLicenseSchema accepts short date values', () => {
+  const result = createLicenseSchema.safeParse({
+    applicationId: '11111111-1111-4111-8111-111111111111',
+    customerId: '22222222-2222-4222-8222-222222222222',
+    validFrom: '2026-06-26',
+    validUntil: '2027-06-26',
+  });
+
+  assert.equal(result.success, true);
+  assert.equal(result.data.validFrom.toISOString(), '2026-06-26T00:00:00.000Z');
+  assert.equal(result.data.validUntil.toISOString(), '2027-06-26T23:59:59.999Z');
+});
+
 test('createLicenseSchema accepts customer data instead of customerId', () => {
   const result = createLicenseSchema.safeParse({
     applicationId: '11111111-1111-4111-8111-111111111111',

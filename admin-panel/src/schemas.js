@@ -3,10 +3,54 @@ const { z } = require('zod');
 const uuid = z.string().uuid();
 const optionalText = (max) => z.string().trim().max(max).optional();
 const requiredText = (max) => z.string().trim().min(1).max(max);
+const shortDatePattern = /^(\d{4})-(\d{2})-(\d{2})$/;
+const isoDateTime = z.string().datetime({ offset: true });
+const parseShortDate = (value, endOfDay) => {
+  const match = shortDatePattern.exec(value);
+
+  if (!match) {
+    return null;
+  }
+
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  const date = new Date(
+    Date.UTC(
+      year,
+      month - 1,
+      day,
+      endOfDay ? 23 : 0,
+      endOfDay ? 59 : 0,
+      endOfDay ? 59 : 0,
+      endOfDay ? 999 : 0
+    )
+  );
+
+  if (
+    date.getUTCFullYear() !== year ||
+    date.getUTCMonth() !== month - 1 ||
+    date.getUTCDate() !== day
+  ) {
+    return null;
+  }
+
+  return date;
+};
 const queryBoolean = z
   .enum(['true', 'false', '1', '0'])
   .transform((value) => value === 'true' || value === '1')
   .optional();
+const dateInput = ({ endOfDay = false } = {}) =>
+  z
+    .string()
+    .trim()
+    .refine((value) => Boolean(parseShortDate(value, endOfDay)) || isoDateTime.safeParse(value).success, {
+      message: 'Usa una fecha YYYY-MM-DD o una fecha ISO valida.',
+    })
+    .transform((value) => {
+      return parseShortDate(value, endOfDay) || new Date(value);
+    });
 
 const loginSchema = z.object({
   username: requiredText(120),
@@ -95,15 +139,19 @@ const customerUpdateSchema = z
     message: 'Debes enviar al menos un campo para actualizar.',
   });
 
-const isoDate = z.string().datetime({ offset: true });
+const serialNumber = z
+  .string()
+  .trim()
+  .toUpperCase()
+  .regex(/^[A-HJ-NP-Z2-9]{5}(-[A-HJ-NP-Z2-9]{5}){4}$/, 'Formato de numero de serie invalido.');
 
 const licenseCreateSchema = z
   .object({
     applicationId: uuid,
     customerId: uuid.optional(),
     customer: z.object(customerFields).optional(),
-    validFrom: isoDate.optional(),
-    validUntil: isoDate,
+    validFrom: dateInput().optional(),
+    validUntil: dateInput({ endOfDay: true }),
     maxActivations: z.number().int().positive().max(100000).default(1),
     metadata: z.record(z.string(), z.unknown()).optional(),
   })
@@ -112,7 +160,11 @@ const licenseCreateSchema = z
   });
 
 const licenseRenewSchema = z.object({
-  validUntil: isoDate,
+  validUntil: dateInput({ endOfDay: true }),
+});
+
+const licenseCertificateSchema = z.object({
+  serialNumber,
 });
 
 const licenseRevokeSchema = z.object({
@@ -148,4 +200,5 @@ module.exports = {
   licenseCreateSchema,
   licenseRenewSchema,
   licenseRevokeSchema,
+  licenseCertificateSchema,
 };

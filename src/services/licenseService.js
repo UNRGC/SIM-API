@@ -10,6 +10,15 @@ const toPublicLicense = (license, serialNumber) => ({
   serialNumber,
 });
 
+const toValidationLicense = (license) => {
+  if (!license) {
+    return null;
+  }
+
+  const { customerRfc, ...safeLicense } = license;
+  return safeLicense;
+};
+
 const resolveRuntimeStatus = (license, now = new Date()) => {
   if (!license) {
     return 'not_found';
@@ -45,7 +54,7 @@ const buildValidationResponse = ({ valid, reason, license }) => ({
   status: license ? resolveRuntimeStatus(license) : 'not_found',
   validFrom: license?.validFrom || null,
   validUntil: license?.validUntil || null,
-  license,
+  license: toValidationLicense(license),
 });
 
 const recordEvent = async (licenseId, eventType, audit, details) => {

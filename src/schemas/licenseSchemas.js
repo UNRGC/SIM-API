@@ -1,10 +1,50 @@
 const { z } = require('zod');
 const { fiscalCustomerFields } = require('./customerSchemas');
 
-const isoDate = z
-  .string()
-  .datetime({ offset: true })
-  .transform((value) => new Date(value));
+const shortDatePattern = /^(\d{4})-(\d{2})-(\d{2})$/;
+const isoDateTime = z.string().datetime({ offset: true });
+const parseShortDate = (value, endOfDay) => {
+  const match = shortDatePattern.exec(value);
+
+  if (!match) {
+    return null;
+  }
+
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  const date = new Date(
+    Date.UTC(
+      year,
+      month - 1,
+      day,
+      endOfDay ? 23 : 0,
+      endOfDay ? 59 : 0,
+      endOfDay ? 59 : 0,
+      endOfDay ? 999 : 0
+    )
+  );
+
+  if (
+    date.getUTCFullYear() !== year ||
+    date.getUTCMonth() !== month - 1 ||
+    date.getUTCDate() !== day
+  ) {
+    return null;
+  }
+
+  return date;
+};
+const dateInput = ({ endOfDay = false } = {}) =>
+  z
+    .string()
+    .trim()
+    .refine((value) => Boolean(parseShortDate(value, endOfDay)) || isoDateTime.safeParse(value).success, {
+      message: 'Usa una fecha YYYY-MM-DD o una fecha ISO valida.',
+    })
+    .transform((value) => {
+      return parseShortDate(value, endOfDay) || new Date(value);
+    });
 
 const uuid = z.string().uuid();
 
@@ -24,8 +64,8 @@ const createLicenseSchema = z
     applicationId: uuid,
     customerId: uuid.optional(),
     customer: createCustomerSchema.optional(),
-    validFrom: isoDate.optional(),
-    validUntil: isoDate,
+    validFrom: dateInput().optional(),
+    validUntil: dateInput({ endOfDay: true }),
     maxActivations: z.number().int().positive().max(100000).default(1),
     metadata: z.record(z.string(), z.unknown()).optional(),
   })
@@ -61,7 +101,7 @@ const revokeLicenseSchema = z.object({
 });
 
 const renewLicenseSchema = z.object({
-  validUntil: isoDate,
+  validUntil: dateInput({ endOfDay: true }),
 });
 
 module.exports = {

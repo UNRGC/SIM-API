@@ -23,7 +23,9 @@ const {
   licenseCreateSchema,
   licenseRenewSchema,
   licenseRevokeSchema,
+  licenseCertificateSchema,
 } = require('../schemas');
+const { PanelError } = require('../errors');
 
 const router = express.Router();
 
@@ -191,14 +193,36 @@ router.get(
   }
 );
 
-router.get(
+router.post(
   '/licenses/:licenseId/certificate',
   requirePermission('licenses:read'),
   validate(licenseIdParamsSchema, 'params'),
+  validate(licenseCertificateSchema),
   async (req, res, next) => {
     try {
       const payload = await callApi({ path: `/api/v1/licenses/${req.params.licenseId}` });
-      const license = payload.data;
+      const validation = await callApi({
+        method: 'POST',
+        path: '/api/v1/licenses/validate',
+        body: {
+          serialNumber: req.body.serialNumber,
+          applicationId: payload.data.applicationId,
+          customerId: payload.data.customerId,
+        },
+      });
+      const license = {
+        ...payload.data,
+        serialNumber: req.body.serialNumber,
+      };
+
+      if (validation.data?.license?.id !== license.id) {
+        throw new PanelError(
+          'El numero de serie no corresponde a esta licencia.',
+          400,
+          'SERIAL_LICENSE_MISMATCH'
+        );
+      }
+
       const pdf = await buildLicenseCertificatePdf(license);
 
       res

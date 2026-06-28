@@ -12,6 +12,7 @@ test('buildValidationResponse exposes UI-friendly license fields', () => {
     license: {
       customerName: 'Cliente Demo',
       customerEmail: 'cliente@example.com',
+      customerRfc: 'XAXX010101000',
       applicationName: 'SIM Desktop',
       applicationCode: 'SIM-DESKTOP',
       status: 'active',
@@ -25,4 +26,5 @@ test('buildValidationResponse exposes UI-friendly license fields', () => {
   assert.equal(response.ownerEmail, 'cliente@example.com');
   assert.equal(response.applicationName, 'SIM Desktop');
   assert.equal(response.status, 'valid');
+  assert.equal(response.license.customerRfc, undefined);
 });

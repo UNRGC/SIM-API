@@ -5,6 +5,7 @@ const state = {
   applications: [],
   customers: [],
   licenses: [],
+  licenseSerials: {},
   message: null,
 };
 
@@ -73,6 +74,7 @@ const logout = async () => {
   state.applications = [];
   state.customers = [];
   state.licenses = [];
+  state.licenseSerials = {};
   render();
 };
 
@@ -197,9 +199,15 @@ const createLicense = async (event) => {
       method: 'POST',
       body: JSON.stringify(cleanObject(payload)),
     });
+    state.licenseSerials[result.id] = result.serialNumber;
     form.reset();
     await loadLicenses();
-    setMessage(`Licencia creada. Numero de serie: ${result.serialNumber}`);
+    const downloaded = await downloadLicenseCertificate(result.id, result.serialNumber);
+    setMessage(
+      downloaded
+        ? `Licencia creada. Numero de serie: ${result.serialNumber}. Certificado descargado.`
+        : `Licencia creada. Numero de serie: ${result.serialNumber}. No se pudo descargar el certificado.`
+    );
   } catch (error) {
     setMessage(error.message, 'error');
   }
@@ -224,7 +232,7 @@ const revokeLicense = async (id) => {
 };
 
 const renewLicense = async (id) => {
-  const validUntil = window.prompt('Nueva vigencia ISO, ejemplo 2028-06-26T00:00:00.000Z');
+  const validUntil = window.prompt('Nueva vigencia, ejemplo 2028-06-26');
   if (!validUntil) {
     return;
   }
@@ -241,10 +249,24 @@ const renewLicense = async (id) => {
   }
 };
 
-const downloadLicenseCertificate = async (id) => {
+const downloadLicenseCertificate = async (id, knownSerialNumber) => {
+  const serialNumber =
+    knownSerialNumber ||
+    state.licenseSerials[id] ||
+    window.prompt('Numero de serie completo de la licencia');
+
+  if (!serialNumber) {
+    return false;
+  }
+
   try {
     const response = await fetch(`/admin/api/licenses/${id}/certificate`, {
-      headers: state.csrfToken ? { 'x-csrf-token': state.csrfToken } : {},
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        ...(state.csrfToken ? { 'x-csrf-token': state.csrfToken } : {}),
+      },
+      body: JSON.stringify({ serialNumber }),
     });
 
     if (!response.ok) {
@@ -265,8 +287,10 @@ const downloadLicenseCertificate = async (id) => {
     link.click();
     link.remove();
     URL.revokeObjectURL(url);
+    return true;
   } catch (error) {
     setMessage(error.message, 'error');
+    return false;
   }
 };
 
@@ -458,8 +482,8 @@ const renderLicenses = () => `
         <form class="form-stack" id="license-form">
           <label>Aplicacion<select name="applicationId" required>${state.applications.map((item) => `<option value="${escapeHtml(item.id)}">${escapeHtml(item.name)}</option>`).join('')}</select></label>
           <label>Cliente<select name="customerId" required>${state.customers.map((item) => `<option value="${escapeHtml(item.id)}">${escapeHtml(item.name)}</option>`).join('')}</select></label>
-          <label>Vigencia desde<input name="validFrom" placeholder="2026-06-26T00:00:00.000Z" /></label>
-          <label>Vigencia hasta<input name="validUntil" required placeholder="2027-06-26T00:00:00.000Z" /></label>
+          <label>Vigencia desde<input name="validFrom" type="date" /></label>
+          <label>Vigencia hasta<input name="validUntil" type="date" required /></label>
           <label>Max activaciones<input name="maxActivations" type="number" min="1" max="100000" value="1" /></label>
           <label>Plan<input name="plan" /></label>
           <button type="submit">Emitir licencia</button>
