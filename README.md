@@ -65,6 +65,26 @@ Flujo recomendado:
 
 Para exponer validacion de licencias en internet, publica solo `POST /api/v1/licenses/validate`. Las rutas administrativas de aplicaciones, clientes y licencias requieren `ADMIN_API_KEYS` y tambien deben pasar `ADMIN_ALLOWED_IPS`; idealmente solo el panel o la red privada deberian alcanzarlas.
 
+## Docker en produccion
+
+El repo incluye una dockerizacion pensada para Debian con:
+
+- `Dockerfile` para la API y `admin-panel/Dockerfile` para el panel.
+- `compose.production.yaml` con PostgreSQL, API y panel.
+- secretos montados como archivos (`*_FILE`) en lugar de variables inline.
+- puertos publicados solo en `127.0.0.1` para que Nginx del host controle la exposicion publica.
+- filesystem de solo lectura, `tmpfs`, `cap_drop: [ALL]`, `no-new-privileges` y healthchecks.
+
+Guia completa:
+
+- [Despliegue Docker en produccion](docs/docker-production.md)
+
+Notas operativas:
+
+- `docs/database-schema.sql` se monta en PostgreSQL como init script solo al crear un volumen nuevo.
+- La red privada del stack usa `172.29.0.0/24`; por eso `deploy/env/api.env.example` define `ADMIN_ALLOWED_IPS=172.29.0.0/24`.
+- El reverse proxy recomendado para Debian esta en `deploy/nginx/sim-api.conf.example` y publica solo `POST /api/v1/licenses/validate`, `GET /health` y el panel.
+
 ## Endpoints
 
 Todas las rutas administrativas requieren una key de `ADMIN_API_KEYS` en el header `x-api-key`. La validacion de licencias desde apps puede usar una key de `APP_API_KEYS`.
@@ -243,7 +263,7 @@ Renovar licencia:
 
 ## HTTP client files
 
-Si usas un IDE con cliente HTTP, abre [`http/sim-api.http`](http/sim-api.http) y edita las variables del encabezado antes de ejecutar las requests.
+Si usas un IDE con cliente HTTP, abre [`http/sim-api.http`](http/sim-api.http) y edita las variables del encabezado antes de ejecutar las requests. En el despliegue Docker de produccion, usa `http://127.0.0.1:3000` desde el servidor para pruebas administrativas o el dominio publico solo para `POST /api/v1/licenses/validate`.
 
 Antes de probar con esos ejemplos, ejecuta [`docs/database-schema.sql`](docs/database-schema.sql) en tu base PostgreSQL. El flujo recomendado es crear la aplicacion con `POST /api/v1/applications` o desde el panel administrativo.
 

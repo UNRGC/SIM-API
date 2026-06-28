@@ -1,4 +1,22 @@
+const fs = require('fs');
 const path = require('path');
+
+const getEnv = (name) => {
+  const directValue = process.env[name];
+  const filePath = process.env[`${name}_FILE`];
+  const hasDirectValue = directValue !== undefined && directValue !== '';
+  const hasFilePath = filePath !== undefined && filePath !== '';
+
+  if (hasDirectValue && hasFilePath) {
+    throw new Error(`Define solo ${name} o ${name}_FILE.`);
+  }
+
+  if (hasFilePath) {
+    return fs.readFileSync(filePath, 'utf8').trim();
+  }
+
+  return directValue;
+};
 
 const toBoolean = (value, defaultValue) => {
   if (value === undefined || value === '') {
@@ -18,7 +36,7 @@ const toNumber = (value, defaultValue) => {
 };
 
 const required = (name) => {
-  const value = process.env[name];
+  const value = getEnv(name);
 
   if (process.env.NODE_ENV === 'test') {
     return value || `test-${name.toLowerCase()}`;
@@ -34,13 +52,13 @@ const required = (name) => {
 const resolvePath = (value) => path.resolve(process.cwd(), value);
 
 module.exports = {
-  port: toNumber(process.env.PANEL_PORT, 3100),
-  basePath: process.env.PANEL_BASE_PATH || '/',
-  trustProxy: toBoolean(process.env.PANEL_TRUST_PROXY, false),
-  cookieSecure: toBoolean(process.env.PANEL_COOKIE_SECURE, false),
-  sessionMinutes: toNumber(process.env.PANEL_SESSION_MINUTES, 60),
+  port: toNumber(getEnv('PANEL_PORT'), 3100),
+  basePath: getEnv('PANEL_BASE_PATH') || '/',
+  trustProxy: toBoolean(getEnv('PANEL_TRUST_PROXY'), false),
+  cookieSecure: toBoolean(getEnv('PANEL_COOKIE_SECURE'), false),
+  sessionMinutes: toNumber(getEnv('PANEL_SESSION_MINUTES'), 60),
   sessionSecret: required('PANEL_SESSION_SECRET'),
   apiBaseUrl: required('SIM_API_BASE_URL').replace(/\/+$/, ''),
   apiAdminKey: required('SIM_API_ADMIN_KEY'),
-  adminUsersFile: resolvePath(process.env.ADMIN_USERS_FILE || './config/admin-users.json'),
+  adminUsersFile: resolvePath(getEnv('ADMIN_USERS_FILE') || './config/admin-users.json'),
 };

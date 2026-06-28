@@ -1,0 +1,139 @@
+name: sim-production
+
+services:
+  db:
+    image: postgres:17-bookworm
+    restart: unless-stopped
+    env_file:
+      - ./deploy/env/postgres.env
+    environment:
+      POSTGRES_PASSWORD_FILE: /run/secrets/postgres_password
+    secrets:
+      - postgres_password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./docs/database-schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U \"$${POSTGRES_USER}\" -d \"$${POSTGRES_DB}\""]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    logging: &default-logging
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"
+    networks:
+      - admin_net
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    init: true
+    stop_grace_period: 20s
+    env_file:
+      - ./deploy/env/api.env
+    environment:
+      PORT: 3000
+      DB_HOST: db
+      DB_PASSWORD_FILE: /run/secrets/postgres_password
+      LICENSE_HASH_SECRET_FILE: /run/secrets/license_hash_secret
+      ADMIN_API_KEYS_FILE: /run/secrets/admin_api_keys
+      APP_API_KEYS_FILE: /run/secrets/app_api_keys
+    secrets:
+      - postgres_password
+      - license_hash_secret
+      - admin_api_keys
+      - app_api_keys
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:3000:3000"
+    read_only: true
+    tmpfs:
+      - /tmp:size=64m,noexec,nosuid
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/health').then((response) => process.exit(response.ok ? 0 : 1)).catch(() => process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+    logging: *default-logging
+    networks:
+      admin_net:
+        aliases:
+          - api-internal
+
+  admin-panel:
+    build:
+      context: ./admin-panel
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    init: true
+    stop_grace_period: 20s
+    env_file:
+      - ./deploy/env/panel.env
+    environment:
+      PANEL_PORT: 3100
+      SIM_API_BASE_URL: http://api-internal:3000
+      PANEL_SESSION_SECRET_FILE: /run/secrets/panel_session_secret
+      SIM_API_ADMIN_KEY_FILE: /run/secrets/admin_api_keys
+      ADMIN_USERS_FILE: /run/secrets/admin_users_json
+    secrets:
+      - panel_session_secret
+      - admin_api_keys
+      - admin_users_json
+    depends_on:
+      api:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:3100:3100"
+    read_only: true
+    tmpfs:
+      - /tmp:size=64m,noexec,nosuid
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3100/health').then((response) => process.exit(response.ok ? 0 : 1)).catch(() => process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+    logging: *default-logging
+    networks:
+      - admin_net
+
+networks:
+  admin_net:
+    driver: bridge
+    internal: true
+    ipam:
+      config:
+        - subnet: 172.29.0.0/24
+
+volumes:
+  postgres_data:
+
+secrets:
+  postgres_password:
+    file: ./deploy/secrets/postgres_password.txt
+  license_hash_secret:
+    file: ./deploy/secrets/license_hash_secret.txt
+  admin_api_keys:
+    file: ./deploy/secrets/admin_api_keys.txt
+  app_api_keys:
+    file: ./deploy/secrets/app_api_keys.txt
+  panel_session_secret:
+    file: ./deploy/secrets/panel_session_secret.txt
+  admin_users_json:
+    file: ./deploy/secrets/admin-users.json

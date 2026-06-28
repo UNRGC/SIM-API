@@ -1,6 +1,8 @@
 /*
   Esquema propuesto para PostgreSQL.
-  Este archivo es solo documental: no lo ejecutes automaticamente desde la API.
+  La API no ejecuta este archivo automaticamente.
+  En compose.production.yaml se monta como script de init de PostgreSQL y solo corre
+  al crear un volumen nuevo.
 */
 
 CREATE EXTENSION IF NOT EXISTS pgcrypto;

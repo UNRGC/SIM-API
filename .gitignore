@@ -131,6 +131,12 @@ dist
 # Local admin panel users
 admin-panel/config/admin-users.json
 admin-panel/.env
+deploy/env/*.env
+!deploy/env/*.example
+deploy/secrets/*.txt
+!deploy/secrets/*.example.txt
+deploy/secrets/*.json
+!deploy/secrets/*.example.json
 
 # pnpm
 .pnpm-store

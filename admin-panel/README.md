@@ -37,6 +37,8 @@ ADMIN_USERS_FILE=./config/admin-users.json
 En produccion usa `PANEL_COOKIE_SECURE=true` y HTTPS.
 En la API principal configura `ADMIN_ALLOWED_IPS` con la IP del panel, del reverse proxy o de la red privada desde donde el panel llamara a la API. En produccion la API exige esta variable explicitamente.
 
+Si despliegas con `compose.production.yaml`, el panel consume secretos con `PANEL_SESSION_SECRET_FILE`, `SIM_API_ADMIN_KEY_FILE` y `ADMIN_USERS_FILE=/run/secrets/admin_users_json`.
+
 3. Genera un hash Argon2id:
 
 ```bash
@@ -105,3 +107,5 @@ Abre `http://localhost:3100`.
 - Rota `SIM_API_ADMIN_KEY` si se sospecha exposicion.
 - Mantén el panel y la API en redes privadas cuando sea posible.
 - Si ejecutas mas de una instancia del panel, reemplaza las sesiones en memoria por un store compartido como Redis.
+
+Para el flujo completo con Docker en Debian revisa `docs/docker-production.md`.

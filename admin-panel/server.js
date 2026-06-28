@@ -42,6 +42,10 @@ app.use(express.json({ limit: '50kb' }));
 app.use(cookieParser());
 app.use(attachSession);
 
+app.get('/health', (_req, res) => {
+  res.status(200).json({ status: 'ok' });
+});
+
 app.use(
   '/admin/api/',
   rateLimit({

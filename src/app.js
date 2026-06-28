@@ -4,6 +4,7 @@ const cors = require('cors');
 const pinoHttp = require('pino-http');
 const { app: appConfig } = require('./config/env');
 const logger = require('./utils/logger');
+const { getPool } = require('./db/postgres');
 const licenseRoutes = require('./routes/licenseRoutes');
 const applicationRoutes = require('./routes/applicationRoutes');
 const customerRoutes = require('./routes/customerRoutes');
@@ -36,8 +37,14 @@ app.use(
 app.use(pinoHttp({ logger }));
 app.use(express.json({ limit: '100kb' }));
 
-app.get('/health', (_req, res) => {
-  res.status(200).json({ status: 'ok' });
+app.get('/health', async (_req, res) => {
+  try {
+    await getPool().query('SELECT 1');
+    res.status(200).json({ status: 'ok' });
+  } catch (error) {
+    logger.warn({ err: error }, 'Healthcheck failed');
+    res.status(503).json({ status: 'error' });
+  }
 });
 
 app.use('/api/v1/applications', applicationRoutes);
