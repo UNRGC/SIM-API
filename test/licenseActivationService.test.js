@@ -209,3 +209,43 @@ test('validateLicense rejects a new device when maxActivations is reached', asyn
     assert.equal(mocks.calls.events[0].details.reason, 'activation_limit_reached');
   });
 });
+
+test('syncActivationCount uses an unambiguous SQL update', async () => {
+  const licenseRepository = require('../src/repositories/licenseRepository');
+  let capturedSql = '';
+  const client = {
+    async query(sql) {
+      capturedSql = sql;
+      return {
+        rows: [
+          {
+            LicenseId: baseLicense.id,
+            ApplicationId: baseLicense.applicationId,
+            ApplicationName: baseLicense.applicationName,
+            ApplicationCode: baseLicense.applicationCode,
+            CustomerId: baseLicense.customerId,
+            CustomerName: baseLicense.customerName,
+            CustomerEmail: baseLicense.customerEmail,
+            CustomerRfc: baseLicense.customerRfc,
+            SerialNumberSuffix: baseLicense.serialNumberSuffix,
+            Status: baseLicense.status,
+            ValidFrom: baseLicense.validFrom,
+            ValidUntil: baseLicense.validUntil,
+            MaxActivations: baseLicense.maxActivations,
+            ActivationCount: 1,
+            MetadataJson: null,
+            RevokedAt: null,
+            RevokedReason: null,
+            CreatedAt: new Date('2026-01-01T00:00:00.000Z'),
+            UpdatedAt: new Date('2026-01-01T00:00:00.000Z'),
+          },
+        ],
+      };
+    },
+  };
+
+  await licenseRepository.syncActivationCount(client, baseLicense.id);
+
+  assert.match(capturedSql, /active_count/);
+  assert.match(capturedSql, /WHERE licenses\.license_id = \$1/);
+});

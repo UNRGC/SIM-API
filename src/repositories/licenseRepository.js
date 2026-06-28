@@ -262,7 +262,7 @@ const syncActivationCount = async (client, licenseId) => {
   const result = await client.query(
     `
       WITH active_activations AS (
-        SELECT COUNT(*)::int AS activation_count
+        SELECT COUNT(*)::int AS active_count
         FROM license_activations
         WHERE license_id = $1
           AND deactivated_at IS NULL
@@ -270,10 +270,10 @@ const syncActivationCount = async (client, licenseId) => {
       updated AS (
         UPDATE licenses
         SET
-          activation_count = active_activations.activation_count,
+          activation_count = active_activations.active_count,
           updated_at = now()
         FROM active_activations
-        WHERE license_id = $1
+        WHERE licenses.license_id = $1
         RETURNING *
       )
       SELECT
