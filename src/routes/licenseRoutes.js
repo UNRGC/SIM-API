@@ -6,8 +6,10 @@ const { adminLimiter, validationLimiter } = require('../middlewares/rateLimiters
 const validate = require('../middlewares/validate');
 const {
   createLicenseSchema,
+  deactivateLicenseSchema,
   validateLicenseSchema,
   listLicensesSchema,
+  licenseActivationIdParamsSchema,
   licenseIdParamsSchema,
   revokeLicenseSchema,
   renewLicenseSchema,
@@ -38,6 +40,13 @@ router.post(
   validate(validateLicenseSchema),
   licenseController.validateLicense
 );
+router.post(
+  '/deactivate',
+  validationLimiter,
+  authenticateApiKey(['admin', 'app']),
+  validate(deactivateLicenseSchema),
+  licenseController.deactivateLicense
+);
 router.get(
   '/:licenseId',
   restrictAdminNetwork,
@@ -45,6 +54,22 @@ router.get(
   authenticateApiKey(['admin']),
   validate(licenseIdParamsSchema, 'params'),
   licenseController.getLicense
+);
+router.get(
+  '/:licenseId/activations',
+  restrictAdminNetwork,
+  adminLimiter,
+  authenticateApiKey(['admin']),
+  validate(licenseIdParamsSchema, 'params'),
+  licenseController.listLicenseActivations
+);
+router.post(
+  '/:licenseId/activations/:activationId/deactivate',
+  restrictAdminNetwork,
+  adminLimiter,
+  authenticateApiKey(['admin']),
+  validate(licenseActivationIdParamsSchema, 'params'),
+  licenseController.deactivateLicenseActivation
 );
 router.post(
   '/:licenseId/revoke',

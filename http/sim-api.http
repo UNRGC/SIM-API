@@ -4,11 +4,13 @@
 @applicationId = 11111111-1111-4111-8111-111111111111
 @customerId = PEGA_AQUI_EL_CUSTOMER_ID_CREADO
 @licenseId = 33333333-3333-4333-8333-333333333333
+@activationId = 1
 @serialNumber = ABCDE-23456-FGHJK-789KL-MNPQR
+@deviceId = sim-device-001
 
 # Antes de probar, ejecuta docs/database-schema.sql.
 # En Docker de produccion, la API queda publicada solo en 127.0.0.1:3000 y Nginx
-# deberia exponer al publico solo POST /api/v1/licenses/validate.
+# deberia exponer al publico solo POST /api/v1/licenses/validate y /deactivate.
 # Copia los ids devueltos por las requests create en applicationId, customerId y licenseId.
 # Despues de crear una licencia, copia data.serialNumber en serialNumber.
 # Las requests administrativas requieren ADMIN_API_KEY y una IP permitida en ADMIN_ALLOWED_IPS.
@@ -133,7 +135,9 @@ x-api-key: {{appApiKey}}
 
 {
   "serialNumber": "{{serialNumber}}",
-  "applicationId": "{{applicationId}}"
+  "applicationId": "{{applicationId}}",
+  "deviceId": "{{deviceId}}",
+  "deviceName": "Caja principal"
 }
 
 ### Validate license with admin key
@@ -146,6 +150,26 @@ x-api-key: {{adminApiKey}}
   "applicationId": "{{applicationId}}",
   "customerId": "{{customerId}}"
 }
+
+### Deactivate current device with app key
+POST {{baseUrl}}/api/v1/licenses/deactivate
+Content-Type: application/json
+x-api-key: {{appApiKey}}
+
+{
+  "serialNumber": "{{serialNumber}}",
+  "applicationId": "{{applicationId}}",
+  "deviceId": "{{deviceId}}"
+}
+
+### List license activations
+GET {{baseUrl}}/api/v1/licenses/{{licenseId}}/activations
+x-api-key: {{adminApiKey}}
+
+### Deactivate a license activation as admin
+POST {{baseUrl}}/api/v1/licenses/{{licenseId}}/activations/{{activationId}}/deactivate
+Content-Type: application/json
+x-api-key: {{adminApiKey}}
 
 ### Revoke license
 POST {{baseUrl}}/api/v1/licenses/{{licenseId}}/revoke

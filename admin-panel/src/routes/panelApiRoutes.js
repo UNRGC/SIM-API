@@ -16,6 +16,7 @@ const {
   applicationIdParamsSchema,
   customerIdParamsSchema,
   licenseIdParamsSchema,
+  licenseActivationIdParamsSchema,
   applicationCreateSchema,
   applicationUpdateSchema,
   customerCreateSchema,
@@ -187,6 +188,39 @@ router.get(
   async (req, res, next) => {
     try {
       res.status(200).json(await callApi({ path: `/api/v1/licenses/${req.params.licenseId}` }));
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+router.get(
+  '/licenses/:licenseId/activations',
+  requirePermission('licenses:read'),
+  validate(licenseIdParamsSchema, 'params'),
+  async (req, res, next) => {
+    try {
+      res.status(200).json(
+        await callApi({ path: `/api/v1/licenses/${req.params.licenseId}/activations` })
+      );
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+router.post(
+  '/licenses/:licenseId/activations/:activationId/deactivate',
+  requirePermission('licenses:write'),
+  validate(licenseActivationIdParamsSchema, 'params'),
+  async (req, res, next) => {
+    try {
+      res.status(200).json(
+        await callApi({
+          method: 'POST',
+          path: `/api/v1/licenses/${req.params.licenseId}/activations/${req.params.activationId}/deactivate`,
+        })
+      );
     } catch (error) {
       next(error);
     }

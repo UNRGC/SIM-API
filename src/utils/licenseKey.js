@@ -17,22 +17,29 @@ const randomChars = (length) => {
 const formatSerial = (value) => value.match(/.{1,5}/g).join('-');
 
 const normalizeSerialNumber = (serialNumber) => serialNumber.trim().toUpperCase();
+const normalizeDeviceId = (deviceId) => deviceId.trim();
 
 const generateSerialNumber = () => formatSerial(randomChars(25));
 
-const hashSerialNumber = (serialNumber) => {
+const hashValue = (value) => {
   if (!security.licenseHashSecret) {
-    throw new Error('Falta LICENSE_HASH_SECRET para calcular hashes de licencias.');
+    throw new Error('Falta LICENSE_HASH_SECRET para calcular hashes.');
   }
 
   return crypto
     .createHmac('sha256', security.licenseHashSecret)
-    .update(normalizeSerialNumber(serialNumber))
+    .update(value)
     .digest('hex');
 };
 
+const hashSerialNumber = (serialNumber) => hashValue(normalizeSerialNumber(serialNumber));
+
+const hashDeviceId = (deviceId) => hashValue(normalizeDeviceId(deviceId));
+
 module.exports = {
   generateSerialNumber,
+  hashDeviceId,
   hashSerialNumber,
+  normalizeDeviceId,
   normalizeSerialNumber,
 };

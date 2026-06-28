@@ -17,7 +17,16 @@ const createLicense = async (req, res, next) => {
 
 const validateLicense = async (req, res, next) => {
   try {
-    const result = await licenseService.validateLicense(req.body, auditContext(req));
+    const result = await licenseService.validateLicense(req.body, auditContext(req), req.auth);
+    res.status(200).json({ data: result });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const deactivateLicense = async (req, res, next) => {
+  try {
+    const result = await licenseService.deactivateLicense(req.body, auditContext(req));
     res.status(200).json({ data: result });
   } catch (error) {
     next(error);
@@ -37,6 +46,28 @@ const getLicense = async (req, res, next) => {
   try {
     const license = await licenseService.getLicense(req.params.licenseId);
     res.status(200).json({ data: license });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const listLicenseActivations = async (req, res, next) => {
+  try {
+    const activations = await licenseService.listLicenseActivations(req.params.licenseId);
+    res.status(200).json({ data: activations });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const deactivateLicenseActivation = async (req, res, next) => {
+  try {
+    const result = await licenseService.deactivateLicenseActivation(
+      req.params.licenseId,
+      req.params.activationId,
+      auditContext(req)
+    );
+    res.status(200).json({ data: result });
   } catch (error) {
     next(error);
   }
@@ -70,8 +101,11 @@ const renewLicense = async (req, res, next) => {
 
 module.exports = {
   createLicense,
+  deactivateLicense,
+  deactivateLicenseActivation,
   validateLicense,
   listLicenses,
+  listLicenseActivations,
   getLicense,
   revokeLicense,
   renewLicense,

@@ -3,6 +3,7 @@ const assert = require('node:assert/strict');
 
 const {
   licenseCreateSchema,
+  licenseActivationIdParamsSchema,
   licenseCertificateSchema,
 } = require('../src/schemas');
 
@@ -27,4 +28,14 @@ test('licenseCertificateSchema normalizes full serial number', () => {
 
   assert.equal(result.success, true);
   assert.equal(result.data.serialNumber, 'ABCDE-23456-FGHJK-789KL-MNPQR');
+});
+
+test('licenseActivationIdParamsSchema coerces activation id', () => {
+  const result = licenseActivationIdParamsSchema.safeParse({
+    licenseId: '33333333-3333-4333-8333-333333333333',
+    activationId: '42',
+  });
+
+  assert.equal(result.success, true);
+  assert.equal(result.data.activationId, 42);
 });

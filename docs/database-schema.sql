@@ -84,6 +84,24 @@ CREATE INDEX ix_licenses_customer_status
 CREATE INDEX ix_licenses_created_at
   ON licenses (created_at DESC);
 
+CREATE TABLE license_activations (
+  license_activation_id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  license_id UUID NOT NULL REFERENCES licenses (license_id),
+  device_id_hash CHAR(64) NOT NULL,
+  device_name VARCHAR(120) NULL,
+  activated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  last_seen_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  deactivated_at TIMESTAMPTZ NULL
+);
+
+CREATE UNIQUE INDEX ux_license_activations_active_device
+  ON license_activations (license_id, device_id_hash)
+  WHERE deactivated_at IS NULL;
+
+CREATE INDEX ix_license_activations_license_last_seen
+  ON license_activations (license_id, last_seen_at DESC)
+  WHERE deactivated_at IS NULL;
+
 CREATE TABLE license_events (
   license_event_id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
   license_id UUID NOT NULL REFERENCES licenses (license_id),
@@ -97,6 +115,8 @@ CREATE TABLE license_events (
       'license.created',
       'license.validated',
       'license.validation_failed',
+      'license.activation_deactivated',
+      'license.activation_deactivation_failed',
       'license.revoked',
       'license.renewed'
     ))

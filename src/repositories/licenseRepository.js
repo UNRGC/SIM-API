@@ -167,6 +167,15 @@ const findBySerialHash = async (serialNumberHash) => {
   return mapLicense(result.rows[0]);
 };
 
+const findBySerialHashForUpdate = async (client, serialNumberHash) => {
+  const result = await client.query(
+    `${baseSelect} WHERE l.serial_number_hash = $1 FOR UPDATE OF l;`,
+    [serialNumberHash]
+  );
+
+  return mapLicense(result.rows[0]);
+};
+
 const list = async ({ applicationId, customerId, status, limit, offset }) => {
   const values = [];
   const clauses = [];
@@ -249,6 +258,54 @@ const revoke = async ({ licenseId, revokedReason }) => {
   return mapLicense(result.rows[0]);
 };
 
+const syncActivationCount = async (client, licenseId) => {
+  const result = await client.query(
+    `
+      WITH active_activations AS (
+        SELECT COUNT(*)::int AS activation_count
+        FROM license_activations
+        WHERE license_id = $1
+          AND deactivated_at IS NULL
+      ),
+      updated AS (
+        UPDATE licenses
+        SET
+          activation_count = active_activations.activation_count,
+          updated_at = now()
+        FROM active_activations
+        WHERE license_id = $1
+        RETURNING *
+      )
+      SELECT
+        u.license_id AS "LicenseId",
+        u.application_id AS "ApplicationId",
+        a.name AS "ApplicationName",
+        a.code AS "ApplicationCode",
+        u.customer_id AS "CustomerId",
+        c.name AS "CustomerName",
+        c.email AS "CustomerEmail",
+        c.rfc AS "CustomerRfc",
+        u.serial_number_suffix AS "SerialNumberSuffix",
+        u.status AS "Status",
+        u.valid_from AS "ValidFrom",
+        u.valid_until AS "ValidUntil",
+        u.max_activations AS "MaxActivations",
+        u.activation_count AS "ActivationCount",
+        u.metadata_json AS "MetadataJson",
+        u.revoked_at AS "RevokedAt",
+        u.revoked_reason AS "RevokedReason",
+        u.created_at AS "CreatedAt",
+        u.updated_at AS "UpdatedAt"
+      FROM updated AS u
+      INNER JOIN applications AS a ON a.application_id = u.application_id
+      INNER JOIN customers AS c ON c.customer_id = u.customer_id;
+    `,
+    [licenseId]
+  );
+
+  return mapLicense(result.rows[0]);
+};
+
 const renew = async ({ licenseId, validUntil, status }) => {
   const result = await getPool().query(
     `
@@ -297,7 +354,9 @@ module.exports = {
   createWithCustomer,
   findById,
   findBySerialHash,
+  findBySerialHashForUpdate,
   list,
   revoke,
   renew,
+  syncActivationCount,
 };

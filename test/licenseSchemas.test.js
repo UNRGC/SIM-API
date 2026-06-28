@@ -2,6 +2,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const {
   createLicenseSchema,
+  deactivateLicenseSchema,
   validateLicenseSchema,
   listLicensesSchema,
 } = require('../src/schemas/licenseSchemas');
@@ -86,6 +87,25 @@ test('validateLicenseSchema enforces serial number format', () => {
   });
 
   assert.equal(result.success, true);
+});
+
+test('validateLicenseSchema accepts device activation fields', () => {
+  const result = validateLicenseSchema.safeParse({
+    serialNumber: 'ABCDE-23456-FGHJK-789KL-MNPQR',
+    deviceId: 'sim-device-001',
+    deviceName: 'Caja principal',
+  });
+
+  assert.equal(result.success, true);
+  assert.equal(result.data.deviceId, 'sim-device-001');
+});
+
+test('deactivateLicenseSchema requires deviceId', () => {
+  const result = deactivateLicenseSchema.safeParse({
+    serialNumber: 'ABCDE-23456-FGHJK-789KL-MNPQR',
+  });
+
+  assert.equal(result.success, false);
 });
 
 test('listLicensesSchema coerces pagination defaults', () => {

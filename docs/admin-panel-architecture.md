@@ -72,6 +72,7 @@ Publico:
 
 ```text
 POST /api/v1/licenses/validate
+POST /api/v1/licenses/deactivate
 ```
 
 Administrativo:
@@ -79,7 +80,7 @@ Administrativo:
 ```text
 /api/v1/applications
 /api/v1/customers
-/api/v1/licenses excepto /validate
+/api/v1/licenses excepto /validate y /deactivate
 ```
 
 Las rutas administrativas tienen dos barreras:

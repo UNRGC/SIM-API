@@ -88,6 +88,7 @@ sudo systemctl reload nginx
 Esa configuracion publica:
 
 - `POST /api/v1/licenses/validate`
+- `POST /api/v1/licenses/deactivate`
 - `GET /health`
 - Todo el panel administrativo en el dominio admin
 
@@ -95,13 +96,24 @@ Y devuelve `404` para el resto de rutas de la API publica.
 
 ## 6. Operacion y actualizaciones
 
-Actualizar:
+Reconstruir conservando datos:
 
 ```bash
 git pull
 docker compose -f compose.production.yaml build --pull
 docker compose -f compose.production.yaml up -d
 ```
+
+Reconstruir desde cero con el esquema nuevo:
+
+```bash
+docker compose -f compose.production.yaml down -v
+docker compose -f compose.production.yaml build --pull
+docker compose -f compose.production.yaml up -d
+docker compose -f compose.production.yaml ps
+```
+
+`down -v` elimina el volumen `postgres_data`. Al levantar de nuevo, PostgreSQL queda vacio y ejecuta `docs/database-schema.sql` desde cero.
 
 Ver logs:
 

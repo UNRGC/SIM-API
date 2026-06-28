@@ -59,6 +59,15 @@ const serialNumber = z
   .max(29)
   .regex(/^[A-HJ-NP-Z2-9]{5}(-[A-HJ-NP-Z2-9]{5}){4}$/i, 'Formato de numero de serie invalido.');
 
+const deviceId = z
+  .string()
+  .trim()
+  .min(8)
+  .max(200)
+  .regex(/^[A-Za-z0-9._:@-]+$/, 'Formato de identificador de equipo invalido.');
+
+const deviceName = z.string().trim().min(1).max(120).optional();
+
 const createLicenseSchema = z
   .object({
     applicationId: uuid,
@@ -82,6 +91,15 @@ const validateLicenseSchema = z.object({
   serialNumber,
   applicationId: uuid.optional(),
   customerId: uuid.optional(),
+  deviceId: deviceId.optional(),
+  deviceName,
+});
+
+const deactivateLicenseSchema = z.object({
+  serialNumber,
+  applicationId: uuid.optional(),
+  customerId: uuid.optional(),
+  deviceId,
 });
 
 const listLicensesSchema = z.object({
@@ -96,6 +114,11 @@ const licenseIdParamsSchema = z.object({
   licenseId: uuid,
 });
 
+const licenseActivationIdParamsSchema = z.object({
+  licenseId: uuid,
+  activationId: z.coerce.number().int().positive(),
+});
+
 const revokeLicenseSchema = z.object({
   reason: z.string().trim().max(500).optional(),
 });
@@ -106,8 +129,10 @@ const renewLicenseSchema = z.object({
 
 module.exports = {
   createLicenseSchema,
+  deactivateLicenseSchema,
   validateLicenseSchema,
   listLicensesSchema,
+  licenseActivationIdParamsSchema,
   licenseIdParamsSchema,
   revokeLicenseSchema,
   renewLicenseSchema,

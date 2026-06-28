@@ -84,6 +84,11 @@ const licenseIdParamsSchema = z.object({
   licenseId: uuid,
 });
 
+const licenseActivationIdParamsSchema = z.object({
+  licenseId: uuid,
+  activationId: z.coerce.number().int().positive(),
+});
+
 const applicationCreateSchema = z.object({
   name: requiredText(150),
   code: requiredText(80).toUpperCase(),
@@ -193,6 +198,7 @@ module.exports = {
   applicationIdParamsSchema,
   customerIdParamsSchema,
   licenseIdParamsSchema,
+  licenseActivationIdParamsSchema,
   applicationCreateSchema,
   applicationUpdateSchema,
   customerCreateSchema,

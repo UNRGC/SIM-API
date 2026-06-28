@@ -249,6 +249,37 @@ const renewLicense = async (id) => {
   }
 };
 
+const manageLicenseActivations = async (id) => {
+  try {
+    const activations = await api(`/admin/api/licenses/${id}/activations`);
+
+    if (activations.length === 0) {
+      setMessage('La licencia no tiene activaciones activas.');
+      return;
+    }
+
+    const summary = activations
+      .map(
+        (item) =>
+          `${item.id} | ${item.deviceName || 'Sin nombre'} | ultimo uso ${formatDateTime(item.lastSeenAt)}`
+      )
+      .join('\n');
+    const activationId = window.prompt(`Activaciones activas:\n${summary}\n\nId a liberar`);
+
+    if (!activationId) {
+      return;
+    }
+
+    await api(`/admin/api/licenses/${id}/activations/${encodeURIComponent(activationId)}/deactivate`, {
+      method: 'POST',
+    });
+    await loadLicenses();
+    setMessage('Activacion liberada.');
+  } catch (error) {
+    setMessage(error.message, 'error');
+  }
+};
+
 const downloadLicenseCertificate = async (id, knownSerialNumber) => {
   const serialNumber =
     knownSerialNumber ||
@@ -471,7 +502,7 @@ const renderLicenses = () => `
       <div class="panel-header"><h2>Licencias recientes</h2></div>
       <div class="table-wrap">
         <table>
-          <thead><tr><th>Cliente</th><th>Aplicacion</th><th>Vigencia</th><th>Estado</th><th>Id</th><th>Acciones</th></tr></thead>
+          <thead><tr><th>Cliente</th><th>Aplicacion</th><th>Vigencia</th><th>Activaciones</th><th>Estado</th><th>Id</th><th>Acciones</th></tr></thead>
           <tbody>${state.licenses.map(renderLicenseRow).join('')}</tbody>
         </table>
       </div>
@@ -498,9 +529,11 @@ const renderLicenseRow = (item) => `
     <td>${escapeHtml(item.customerName || '')}<br><span class="muted">${escapeHtml(item.customerEmail || '')}</span></td>
     <td>${escapeHtml(item.applicationName || '')}<br><span class="mono">${escapeHtml(item.applicationCode || '')}</span></td>
     <td><span class="muted">Hasta</span><br>${escapeHtml(formatDate(item.validUntil))}</td>
+    <td>${escapeHtml(item.activationCount ?? 0)} / ${escapeHtml(item.maxActivations ?? '')}</td>
     <td>${statusBadge(item.status)}</td>
     <td class="mono">${escapeHtml(item.id)}<br><span class="muted">...${escapeHtml(item.serialNumberSuffix || '')}</span></td>
     <td class="actions">
+      <button class="secondary" data-activations-license="${escapeHtml(item.id)}">Activaciones</button>
       <button class="secondary" data-certificate-license="${escapeHtml(item.id)}">Certificado</button>
       <button class="secondary" data-renew-license="${escapeHtml(item.id)}">Renovar</button>
       <button class="danger" data-revoke-license="${escapeHtml(item.id)}">Revocar</button>
@@ -521,6 +554,8 @@ const statusBadge = (status) => {
 };
 
 const formatDate = (value) => (value ? new Date(value).toLocaleDateString('es-MX') : '');
+
+const formatDateTime = (value) => (value ? new Date(value).toLocaleString('es-MX') : '');
 
 const bindViewEvents = () => {
   document.querySelector('#reload')?.addEventListener('click', loadCurrentView);
@@ -546,6 +581,9 @@ const bindViewEvents = () => {
   });
   document.querySelectorAll('[data-renew-license]').forEach((button) => {
     button.addEventListener('click', () => renewLicense(button.dataset.renewLicense));
+  });
+  document.querySelectorAll('[data-activations-license]').forEach((button) => {
+    button.addEventListener('click', () => manageLicenseActivations(button.dataset.activationsLicense));
   });
   document.querySelectorAll('[data-certificate-license]').forEach((button) => {
     button.addEventListener('click', () => downloadLicenseCertificate(button.dataset.certificateLicense));
